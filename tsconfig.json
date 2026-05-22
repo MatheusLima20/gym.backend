@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "lib": ["es5", "es6"],
+        "types": ["node", "jest"],
+        "paths": {
+            "@/*": ["./src/*"],
+            "@modules/*": ["./src/modules/*"],
+            "@shared/*": ["./src/shared/*"]
+        },
+        "target": "es6",
+        "module": "commonjs",
+        "moduleResolution": "bundler",
+        "rootDir": "./src",
+        "outDir": "./build",
+        "typeRoots": ["src/@types", "./node_modules/@types"],
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "sourceMap": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true
+    }
+}
