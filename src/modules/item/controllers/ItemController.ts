@@ -1,17 +1,18 @@
-import { IItem } from "../entities/IItem";
+import { IItem } from "../entities/interfaces/IItem";
+import { ItemEntity } from "../entities/ItemEntity";
 import { IItemRepository } from "../repositories/IItemRepository";
 
 
 export class ItemController implements IItemRepository {
     
-    async register(order: IItem): Promise<boolean | null> {
+    async register(order: IItem): Promise<boolean> {
         return true;
     }
-    async getByUID(id: string): Promise<string | null> {
+    async getByUID(id: string): Promise<ItemEntity | null> {
         throw new Error("Method not implemented.");
     }
     
-    change(order: IItem): Promise<IItem | null> {
+    update(order: IItem): Promise<IItem | null> {
         throw new Error("Method not implemented.");
     }
     delete(order: IItem): Promise<boolean | null> {

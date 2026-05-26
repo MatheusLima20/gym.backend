@@ -1,15 +1,19 @@
-import { IItem } from "./IItem";
+import { IItem } from "./interfaces/IItem";
 
 
-export class Item implements IItem {
+export class ItemEntity implements IItem {
     uid!: string;
     orderId!: string;
     platform!: number;
+    name!: string;
+    description!: string;
+    value!: number;
+    createdAt!: Date;
+    updatedAt!:Date;
     
 
-    constructor(props: Item) {
+    constructor(props: ItemEntity) {
         Object.assign(this, props);
     }
 
-    
 }

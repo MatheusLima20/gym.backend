@@ -1,8 +1,12 @@
-import { Item } from "../entities/ItemEntity";
+import { ResultCreateItemDTO } from "../dtos/create-item.dto";
+import { FindItemByNameDTO } from "../dtos/item-by-name.dto";
+import { FindItemByUidDTO } from "../dtos/item-by-uid.dto";
+import { ItemEntity } from "../entities/ItemEntity";
 
 export interface IItemRepository {
-    getByUID(id: string): Promise<Item | null>;
-    register(item: Item): Promise<boolean>;
-    change(item: Item): Promise<Item | null>;
-    delete(item: Item): Promise<boolean | null>;
+    getByUID(id: string): Promise<FindItemByUidDTO | null>;
+    getByName(name: string): Promise<FindItemByNameDTO | null>;
+    register(item: ItemEntity): Promise<ResultCreateItemDTO | null>;
+    update(item: ItemEntity): Promise<ItemEntity | null>;
+    delete(item: ItemEntity): Promise<boolean | null>;
 }
