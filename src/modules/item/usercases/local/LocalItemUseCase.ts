@@ -22,24 +22,32 @@ export class InMemoryItemUseCase {
             ...data,
         });
 
-        const success = await this.itemRepository.register(item);
+        const resultItem = await this.itemRepository.register(item);
 
-        return success;
-    }
-
-    async findByUId(uid: string | undefined) {
-
-        if (!uid) {
-            throw new Error("Id not found!");
+        if (!resultItem) {
+            throw new Error("Item not found!");
         }
 
+        return resultItem;
+    }
+
+    async findByUId(uid: string) {
+
         const item = await this.itemRepository.getByUID(uid);
+
+        if (!item) {
+            throw new Error("Item not found!");
+        }
 
         return item;
     }
 
     async findByName(name: string) {
         const item = await this.itemRepository.getByName(name);
+
+        if (!item) {
+            throw new Error("Item not found!");
+        }
 
         return item;
     }

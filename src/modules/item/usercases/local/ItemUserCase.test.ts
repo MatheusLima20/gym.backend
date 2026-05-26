@@ -2,18 +2,18 @@ import { InMemoryItemUseCase } from "./LocalItemUseCase";
 import { InMemoryItemRepository } from "../../repositories/InMemoryItemRepository";
 import { CreateItemDTO } from "../../dtos/create-item.dto";
 
-const item = {
+const item: CreateItemDTO = {
     orderId: "1",
     platform: 1,
     name: "Seat",
     description: "Secretary Seat",
     value: 50,
-} as CreateItemDTO;
+};
 
-const item2 = {
+const item2: CreateItemDTO = {
     ...item,
     name: 'Seat1'
-} as CreateItemDTO;
+};
 
 describe("InMemoryItem", () => {
     test("Should register item just once item.register", async () => {
@@ -24,8 +24,8 @@ describe("InMemoryItem", () => {
         const result = await useCase.execute(item);
         const result1 = await useCase.execute(item2);
 
-        expect(result?.name).toBe(item.name);
-        expect(result1?.name).toBe(item2.name);
+        expect(result.name).toBe(item.name);
+        expect(result1.name).toBe(item2.name);
     });
 
     test("Should find item by id item.find.uid", async () => {
@@ -37,7 +37,7 @@ describe("InMemoryItem", () => {
 
         const result = await useCase.findByUId(resultCreated?.uid);
 
-        expect(result?.uid).toBe(resultCreated?.uid);
+        expect(result.uid).toBe(resultCreated.uid);
     });
 
     test("Should find item by name item.find.name", async () => {
@@ -49,6 +49,6 @@ describe("InMemoryItem", () => {
 
         const result = await useCase.findByName("Seat");
 
-        expect(result?.name).toBe("Seat");
+        expect(result.name).toBe("Seat");
     });
 });
