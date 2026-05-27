@@ -1,31 +1,41 @@
-import { ItemResponseDTO } from "../../dtos/create-item.dto";
+import { ItemCreateResponseDTO } from "../../dtos/create-item.dto";
+import { ItemResponseDTO } from "../../dtos/item-response.dto";
+import { UpdateItemResponseDTO } from "../../dtos/update-item.dto";
 import { ItemEntity } from "../../entities/ItemEntity";
+import { ItemMapper } from "../../mappers/item.mapper";
 import { IItemRepository } from "../interfaces/IItemRepository";
-
 
 export class InMemoryItemRepository implements IItemRepository {
     items: ItemEntity[] = [];
 
-    async getByUID(uid: string): Promise<ItemEntity | null> {
+    async findByOrderUID(idOrder: string): Promise<ItemResponseDTO[]> {
+        const item = this.items.filter((item) => item.orderId === idOrder);
+
+        return ItemMapper.toOrderUIDResponseList(item);
+    }
+
+    async findByUID(uid: string): Promise<ItemResponseDTO | null> {
         return this.items.find((item) => item.uid === uid) || null;
     }
 
-    async getByName(name: string): Promise<ItemEntity | null> {
+    async findByName(name: string): Promise<ItemResponseDTO | null> {
         return this.items.find((item) => item.name === name) || null;
     }
 
-    async register(item: ItemEntity): Promise<ItemResponseDTO | null> {
-        try {
-            this.items.push(item);
+    async register(item: ItemEntity): Promise<ItemCreateResponseDTO | null> {
+        this.items.push(item);
 
-            return item;
-        } catch (error) {
-            return null;
-        }
+        return item;
     }
 
-    async update(item: ItemEntity): Promise<ItemEntity | null> {
-        throw new Error("Method not implemented.");
+    async update(item: ItemEntity): Promise<UpdateItemResponseDTO | null> {
+        const index = this.items.findIndex(
+            (oldItem) => oldItem.uid === item.uid,
+        );
+
+        const newItem = (this.items[index] = item);
+
+        return newItem;
     }
 
     delete(item: ItemEntity): Promise<boolean | null> {

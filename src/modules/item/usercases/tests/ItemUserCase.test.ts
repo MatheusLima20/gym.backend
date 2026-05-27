@@ -1,6 +1,7 @@
 import { ItemUseCase } from "../ItemUseCase";
 import { CreateItemDTO } from "../../dtos/create-item.dto";
 import { InMemoryItemRepository } from "../../repositories/implementations/InMemoryItemRepository";
+import { UpdateItemDTO } from "../../dtos/update-item.dto";
 
 const item: CreateItemDTO = {
     orderId: "1",
@@ -12,43 +13,105 @@ const item: CreateItemDTO = {
 
 const item2: CreateItemDTO = {
     ...item,
-    name: 'Seat1'
+    name: "Seat1",
 };
 
+const makeItem = (data?: Partial<CreateItemDTO>): CreateItemDTO => ({
+    orderId: "1",
+    platform: 1,
+    name: "Seat",
+    description: "Secretary Seat",
+    value: 50,
+    ...data,
+});
+
 describe("InMemoryItem", () => {
-    test("Should register item just once item.register", async () => {
+    test("Should register an item just once", async () => {
         const repository = new InMemoryItemRepository();
 
         const useCase = new ItemUseCase(repository);
 
-        const result = await useCase.execute(item);
-        const result1 = await useCase.execute(item2);
+        const result = await useCase.create(item);
+        const result1 = await useCase.create(item2);
 
         expect(result.name).toBe(item.name);
         expect(result1.name).toBe(item2.name);
     });
 
-    test("Should find item by id item.find.uid", async () => {
+    test("Should find an item by id", async () => {
         const repository = new InMemoryItemRepository();
 
         const useCase = new ItemUseCase(repository);
 
-        const resultCreated = await useCase.execute(item);
+        const resultCreated = await useCase.create(item);
 
-        const result = await useCase.findByUId(resultCreated?.uid);
+        const result = await useCase.findByUID(resultCreated?.uid);
 
         expect(result.uid).toBe(resultCreated.uid);
     });
 
-    test("Should find item by name item.find.name", async () => {
+    test("Should find an item by name item", async () => {
         const repository = new InMemoryItemRepository();
 
         const useCase = new ItemUseCase(repository);
 
-        await useCase.execute(item);
+        await useCase.create(item);
 
         const result = await useCase.findByName("Seat");
 
         expect(result.name).toBe("Seat");
+    });
+
+    test("Should update an existing item", async () => {
+        const repository = new InMemoryItemRepository();
+
+        const useCase = new ItemUseCase(repository);
+
+        await useCase.create(
+            makeItem({
+                name: "Fridge",
+                description: "Fridge to the main room.",
+                orderId: "1",
+            }),
+        );
+        await useCase.create(item2);
+        const resultItem = await useCase.create(item);
+
+        const newItem: UpdateItemDTO = {
+            name: "Table",
+            description: "Secretary Table",
+            value: 100,
+            orderId: resultItem.orderId,
+            uid: resultItem.uid,
+        };
+
+        const itemUpdated = await useCase.update(newItem);
+
+        expect(resultItem).not.toEqual(itemUpdated);
+    });
+
+    test("Should return same order existing items", async () => {
+        const repository = new InMemoryItemRepository();
+
+        const useCase = new ItemUseCase(repository);
+
+        await useCase.create(item2);
+        await useCase.create(item);
+
+        await useCase.create(
+            makeItem({
+                name: "Fridge",
+                description: "Fridge to the main room.",
+                orderId: "2",
+            }),
+        );
+
+        const items = await useCase.findByOrderUID(item.orderId);
+
+        expect(items).toHaveLength(2);
+
+        expect(items.every((item) => item.orderId === item2.orderId)).toBe(
+            true,
+        );
     });
 });

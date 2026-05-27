@@ -8,7 +8,7 @@ export class ItemController implements IItemRepository {
     async register(order: IItem): Promise<boolean> {
         return true;
     }
-    async getByUID(id: string): Promise<ItemEntity | null> {
+    async findByUID(id: string): Promise<ItemEntity | null> {
         throw new Error("Method not implemented.");
     }
     

@@ -5,4 +5,4 @@ export type CreateItemDTO = Pick<
     "name" | "description" | "orderId" | "platform" | "value"
 >;
 
-export type ItemResponseDTO = Pick<ItemEntity, "uid" | "name" | "description" | "orderId" | "value">;
+export type ItemCreateResponseDTO = Pick<ItemEntity, "uid" | "name" | "description" | "orderId" | "value" | "updatedAt">;
