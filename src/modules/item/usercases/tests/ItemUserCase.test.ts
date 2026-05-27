@@ -25,11 +25,23 @@ const makeItem = (data?: Partial<CreateItemDTO>): CreateItemDTO => ({
     ...data,
 });
 
-describe("InMemoryItem", () => {
-    test("Should register an item just once", async () => {
-        const repository = new InMemoryItemRepository();
+describe("ItemUserCase", () => {
 
-        const useCase = new ItemUseCase(repository);
+    let repository: InMemoryItemRepository;
+
+    let useCase: ItemUseCase;
+
+    beforeEach(() => {
+
+        repository =
+            new InMemoryItemRepository();
+
+        useCase =
+            new ItemUseCase(repository);
+    });
+
+
+    test("Should register an item", async () => {
 
         const result = await useCase.create(item);
         const result1 = await useCase.create(item2);
@@ -39,9 +51,6 @@ describe("InMemoryItem", () => {
     });
 
     test("Should find an item by id", async () => {
-        const repository = new InMemoryItemRepository();
-
-        const useCase = new ItemUseCase(repository);
 
         const resultCreated = await useCase.create(item);
 
@@ -51,9 +60,6 @@ describe("InMemoryItem", () => {
     });
 
     test("Should find an item by name item", async () => {
-        const repository = new InMemoryItemRepository();
-
-        const useCase = new ItemUseCase(repository);
 
         await useCase.create(item);
 
@@ -63,9 +69,6 @@ describe("InMemoryItem", () => {
     });
 
     test("Should update an existing item", async () => {
-        const repository = new InMemoryItemRepository();
-
-        const useCase = new ItemUseCase(repository);
 
         await useCase.create(
             makeItem({
@@ -87,13 +90,10 @@ describe("InMemoryItem", () => {
 
         const itemUpdated = await useCase.update(newItem);
 
-        expect(resultItem).not.toEqual(itemUpdated);
+        expect(itemUpdated.name).toBe("Table");
     });
 
     test("Should return same order existing items", async () => {
-        const repository = new InMemoryItemRepository();
-
-        const useCase = new ItemUseCase(repository);
 
         await useCase.create(item2);
         await useCase.create(item);
