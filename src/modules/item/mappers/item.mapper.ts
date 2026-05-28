@@ -1,5 +1,5 @@
 import { ItemResponseDTO } from "../dtos/item-response.dto";
-import { ItemEntity } from "../entities/ItemEntity";
+import { ItemEntity } from "../entities/item.entity";
 
 export const ItemMapper = {
 

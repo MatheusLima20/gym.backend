@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { CreateItemDTO } from "../dtos/create-item.dto";
-import { ItemEntity } from "../entities/ItemEntity";
-import { IItemRepository } from "../repositories/interfaces/IItemRepository";
+import { ItemEntity } from "../entities/item.entity";
+import { IItemRepository } from "../repositories/item-repository.interface";
 import { UpdateItemDTO } from "../dtos/update-item.dto";
 
 export class ItemUseCase {
@@ -16,7 +16,7 @@ export class ItemUseCase {
             updatedAt: new Date(),
             ...data,
         });
-
+        
         const resultItem = await this.itemRepository.register(item);
 
         if (!resultItem) {

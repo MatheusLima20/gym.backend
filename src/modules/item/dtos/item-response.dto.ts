@@ -1,4 +1,4 @@
-import { ItemEntity } from "../entities/ItemEntity";
+import { ItemEntity } from "../entities/item.entity";
 
 export type ItemResponseDTO = Pick<
     ItemEntity,

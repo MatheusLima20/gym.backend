@@ -1,17 +1,19 @@
+import { ItemProps } from "./item.props";
 
 
-export class ItemEntity {
+export class ItemEntity implements ItemProps {
     uid!: string;
     orderId!: string;
     platform!: number;
     name!: string;
     description!: string;
+    isForSale!: boolean;
     value!: number;
     createdAt!: Date;
     updatedAt!:Date;
     
 
-    constructor(props: ItemEntity) {
+    constructor(props: ItemProps) {
         Object.assign(this, props);
     }
 

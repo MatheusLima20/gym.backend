@@ -1,12 +1,13 @@
-import { ItemUseCase } from "../ItemUseCase";
+import { ItemUseCase } from "../item.usecase";
 import { CreateItemDTO } from "../../dtos/create-item.dto";
-import { InMemoryItemRepository } from "../../repositories/implementations/InMemoryItemRepository";
+import { InMemoryItemRepository } from "../../repositories/implementations/in-memory-item.repository";
 import { UpdateItemDTO } from "../../dtos/update-item.dto";
 
 const item: CreateItemDTO = {
     orderId: "1",
     platform: 1,
     name: "Seat",
+    isForSale: false,
     description: "Secretary Seat",
     value: 50,
 };
@@ -20,6 +21,7 @@ const makeItem = (data?: Partial<CreateItemDTO>): CreateItemDTO => ({
     orderId: "1",
     platform: 1,
     name: "Seat",
+    isForSale: false,
     description: "Secretary Seat",
     value: 50,
     ...data,
@@ -74,6 +76,7 @@ describe("ItemUserCase", () => {
         const newItem: UpdateItemDTO = {
             name: "Table",
             description: "Secretary Table",
+            isForSale: false,
             value: 100,
             orderId: resultItem.orderId,
             uid: resultItem.uid,

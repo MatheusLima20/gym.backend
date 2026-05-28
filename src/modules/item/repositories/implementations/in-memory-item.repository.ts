@@ -1,9 +1,9 @@
 import { ItemCreateResponseDTO } from "../../dtos/create-item.dto";
 import { ItemResponseDTO } from "../../dtos/item-response.dto";
 import { UpdateItemResponseDTO } from "../../dtos/update-item.dto";
-import { ItemEntity } from "../../entities/ItemEntity";
+import { ItemEntity } from "../../entities/item.entity";
 import { ItemMapper } from "../../mappers/item.mapper";
-import { IItemRepository } from "../interfaces/IItemRepository";
+import { IItemRepository } from "../item-repository.interface";
 
 export class InMemoryItemRepository implements IItemRepository {
     items: ItemEntity[] = [];
