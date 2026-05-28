@@ -3,7 +3,7 @@ import { ItemEntity } from "../entities/item.entity";
 
 export const ItemMapper = {
 
-    toOrderUIDResponse: (
+    toItemUIDResponse: (
         item: ItemEntity,
     ): ItemResponseDTO => {
 
@@ -19,12 +19,12 @@ export const ItemMapper = {
         };
     },
 
-    toOrderUIDResponseList: (
+    toItemUIDResponseList: (
         items: ItemEntity[],
     ): ItemResponseDTO[] => {
 
         return items.map(
-            ItemMapper.toOrderUIDResponse
+            ItemMapper.toItemUIDResponse
         );
     },
 };

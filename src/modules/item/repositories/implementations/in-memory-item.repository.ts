@@ -11,7 +11,7 @@ export class InMemoryItemRepository implements IItemRepository {
     async findByOrderUID(idOrder: string): Promise<ItemResponseDTO[]> {
         const item = this.items.filter((item) => item.orderId === idOrder);
 
-        return ItemMapper.toOrderUIDResponseList(item);
+        return ItemMapper.toItemUIDResponseList(item);
     }
 
     async findByUID(uid: string): Promise<ItemResponseDTO | null> {
