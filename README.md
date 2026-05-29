@@ -43,8 +43,8 @@ Scalable backend API built with Node.js and TypeScript following a modular archi
 ```bash
 src/
 ├── @types/
+├── infra/
 ├── modules/
-├── shared/
-├── database/
 ├── services/
+├── shared/
 └── utils/
