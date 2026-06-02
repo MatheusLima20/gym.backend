@@ -2,9 +2,10 @@ import { ItemUseCase } from "../item.usecase";
 import { CreateItemDTO } from "../../dtos/create-item.dto";
 import { InMemoryItemRepository } from "../../repositories/implementations/in-memory-item.repository";
 import { UpdateItemDTO } from "../../dtos/update-item.dto";
+import { InMemoryOrderRepository } from "@/modules/order/repositories/implementations/in-memory-order.repository";
 
 const item: CreateItemDTO = {
-    orderId: "1",
+    orderUID: "1",
     platform: 1,
     name: "Seat",
     isForSale: false,
@@ -18,7 +19,7 @@ const item2: CreateItemDTO = {
 };
 
 const makeItem = (data?: Partial<CreateItemDTO>): CreateItemDTO => ({
-    orderId: "1",
+    orderUID: "1",
     platform: 1,
     name: "Seat",
     isForSale: false,
@@ -28,14 +29,17 @@ const makeItem = (data?: Partial<CreateItemDTO>): CreateItemDTO => ({
 });
 
 describe("ItemUserCase", () => {
-    let repository: InMemoryItemRepository;
+    let itemRepository: InMemoryItemRepository;
+
+    let orderRepository: InMemoryOrderRepository;
 
     let useCase: ItemUseCase;
 
     beforeEach(() => {
-        repository = new InMemoryItemRepository();
+        itemRepository = new InMemoryItemRepository();
+        orderRepository = new InMemoryOrderRepository();
 
-        useCase = new ItemUseCase(repository);
+        useCase = new ItemUseCase(itemRepository, orderRepository);
     });
 
     test("Should register an item", async () => {
@@ -67,7 +71,7 @@ describe("ItemUserCase", () => {
             makeItem({
                 name: "Fridge",
                 description: "Fridge to the main room.",
-                orderId: "1",
+                orderUID: "1",
             }),
         );
         await useCase.create(item2);
@@ -78,7 +82,7 @@ describe("ItemUserCase", () => {
             description: "Secretary Table",
             isForSale: false,
             value: 100,
-            orderId: resultItem.orderId,
+            orderUID: resultItem.orderUID,
             uid: resultItem.uid,
         };
 
@@ -95,15 +99,15 @@ describe("ItemUserCase", () => {
             makeItem({
                 name: "Fridge",
                 description: "Fridge to the main room.",
-                orderId: "2",
+                orderUID: "2",
             }),
         );
 
-        const items = await useCase.findByOrderUID(item.orderId);
+        const items = await useCase.findItemByOrderUID(item.orderUID);
 
         expect(items).toHaveLength(2);
 
-        expect(items.every((item) => item.orderId === item2.orderId)).toBe(
+        expect(items.every((item) => item.orderUID === item2.orderUID)).toBe(
             true,
         );
     });
@@ -116,7 +120,7 @@ describe("ItemUserCase", () => {
             makeItem({
                 name: "Fridge",
                 description: "Fridge to the main room.",
-                orderId: "2",
+                orderUID: "2",
             }),
         );
 

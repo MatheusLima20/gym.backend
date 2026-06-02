@@ -91,7 +91,7 @@ describe("OrderUserCase", () => {
 
         const orders = await useCase.findAll();
 
-        expect(orders).toHaveLength(3);
+        expect(orders).toHaveLength(5);
     });
 
     test("Should to delete an order", async () => {

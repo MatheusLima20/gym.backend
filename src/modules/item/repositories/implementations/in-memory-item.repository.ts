@@ -8,8 +8,8 @@ import { IItemRepository } from "../item-repository.interface";
 export class InMemoryItemRepository implements IItemRepository {
     items: ItemEntity[] = [];
 
-    async findByOrderUID(idOrder: string): Promise<ItemResponseDTO[]> {
-        const item = this.items.filter((item) => item.orderId === idOrder);
+    async findItemByOrderUID(orderUID: string): Promise<ItemResponseDTO[]> {
+        const item = this.items.filter((item) => item.orderUID === orderUID);
 
         return ItemMapper.toItemUIDResponseList(item);
     }

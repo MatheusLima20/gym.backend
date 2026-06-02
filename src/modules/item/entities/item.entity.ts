@@ -3,7 +3,7 @@ import { ItemProps } from "./item.props";
 
 export class ItemEntity implements ItemProps {
     uid!: string;
-    orderId!: string;
+    orderUID!: string;
     platform!: number;
     name!: string;
     description!: string;

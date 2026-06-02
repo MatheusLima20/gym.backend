@@ -5,7 +5,7 @@ import { UpdateItemResponseDTO } from "../dtos/update-item.dto";
 import { ItemProps } from "../entities/item.props";
 
 export interface IItemRepository {
-    findByOrderUID(orderID: string): Promise<ItemResponseDTO[]>;
+    findItemByOrderUID(orderUID: string): Promise<ItemResponseDTO[]>;
     findByUID(uid: string): Promise<ItemResponseDTO | null>;
     findByName(name: string): Promise<ItemResponseDTO | null>;
     register(item: ItemProps): Promise<ItemCreateResponseDTO | null>;
