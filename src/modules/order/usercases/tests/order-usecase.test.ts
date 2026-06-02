@@ -20,7 +20,7 @@ const makeOrder = (data?: Partial<CreateOrderDTO>): CreateOrderDTO => ({
     ...data,
 });
 
-describe("OrderUserCase", () => {
+describe("OrderUsecase", () => {
     let repository: InMemoryOrderRepository;
 
     let useCase: OrderUseCase;

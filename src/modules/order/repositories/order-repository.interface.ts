@@ -9,5 +9,5 @@ export interface IOrderRepository {
     findByDescription(description: string): Promise<OrderResponseDTO | null>;
     register(order: OrderProps): Promise<CreateOrderResponseDTO | null>;
     update(order: OrderProps): Promise<UpdateOrderResponseDTO | null>;
-    delete(uid: string): Promise<boolean | null>;
+    delete(uid: string): Promise<boolean>;
 }

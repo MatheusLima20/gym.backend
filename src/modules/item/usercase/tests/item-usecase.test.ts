@@ -28,7 +28,7 @@ const makeItem = (data?: Partial<CreateItemDTO>): CreateItemDTO => ({
     ...data,
 });
 
-describe("ItemUserCase", () => {
+describe("ItemUsecase", () => {
     let itemRepository: InMemoryItemRepository;
 
     let orderRepository: InMemoryOrderRepository;
