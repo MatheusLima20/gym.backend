@@ -4,6 +4,7 @@ import { Gender } from "../../enum/gender.enum";
 import { UserType } from "../../enum/user-type.enum";
 import { InMemoryUserRepository } from "../../repositories/implementations/in-memory-user.repository";
 import { UserUseCase } from "../user.usecase";
+import { UpdateUserDTO } from "../../dtos/update-user.dto";
 
 const user: CreateUserDTO = {
     platform: 1,
@@ -41,10 +42,36 @@ describe("UserUsecase", () => {
         useCase = new UserUseCase(repository);
     });
 
-    test("should register one user", async () => {
+    test("should register an user", async () => {
         const result = await useCase.create(user);
 
         expect(result.name).toBe(user.name);
+    });
+
+    test("should update an user", async () => {
+        const registeredUser = await useCase.create(user);
+        await useCase.create(user2);
+        await useCase.create(
+            makeUser({
+                name: "Ramon Dias",
+                email: "ramon.dias@gmail.com",
+                docNumberPerson: 458798755,
+            }),
+        );
+
+        const userToUpdate: UpdateUserDTO = {
+            ...registeredUser,
+            name: "Matheus Lima",
+            password: "",
+            docNumberBusiness: null,
+            docNumberPerson: null,
+            gender: Gender.MALE,
+            email: "matheus2096lima@gmail.com",
+        };
+
+        const result = await useCase.update(userToUpdate);
+        
+        expect(result.name).toBe(userToUpdate.name);
     });
 
     test("should to get all registered users", async () => {

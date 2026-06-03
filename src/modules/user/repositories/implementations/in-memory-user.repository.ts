@@ -1,4 +1,5 @@
 import { CreateUserResponseDTO } from "../../dtos/create-user.dto";
+import { UpdateUserResponseDTO } from "../../dtos/update-user.dto";
 import { UserResponseDTO } from "../../dtos/user-response.dto copy";
 import { UserEntity } from "../../entities/user.entity";
 import { UserProps } from "../../entities/user.props";
@@ -9,11 +10,21 @@ import { IUserRepository } from "../user-repository-interface";
 export class InMemoryUserRepository implements IUserRepository {
     private users: UserEntity[] = [];
 
+    async findByUID(uid: string): Promise<UserResponseDTO | null> {
+        const user = this.users.find((users) => users.uid === uid);
+
+        if (!user) {
+            return null;
+        }
+
+        return UserMapper.toUserFindResponse(user);
+    }
+
     async findByEmail(email: string): Promise<UserResponseDTO | null> {
         const user = this.users.find((users) => users.email === email);
 
         if (!user) {
-            throw new Error("User not found.");
+            return null;
         }
 
         return UserMapper.toUserFindResponse(user);
@@ -33,10 +44,20 @@ export class InMemoryUserRepository implements IUserRepository {
 
         return user;
     }
-    async update(user: UserProps): Promise<UserProps | null> {
-        throw new Error("Method not implemented.");
+    async update(user: UserProps): Promise<UpdateUserResponseDTO | null> {
+        const index = this.users.findIndex(
+            (oldUser) => oldUser.uid === user.uid,
+        );
+
+        const updatedUser = (this.users[index] = user);
+
+        return updatedUser;
     }
     async delete(uid: string): Promise<boolean> {
-        throw new Error("Method not implemented.");
+        const index = this.users.findIndex((oldUsers) => oldUsers.uid === uid);
+
+        const removedUser = this.users.splice(index, 1);
+
+        return !!removedUser;
     }
 }
