@@ -48,7 +48,7 @@ describe("UserUsecase", () => {
         expect(result.name).toBe(user.name);
     });
 
-    test("should update an user", async () => {
+    test("should to update an user", async () => {
         const registeredUser = await useCase.create(user);
         await useCase.create(user2);
         await useCase.create(
@@ -70,7 +70,7 @@ describe("UserUsecase", () => {
         };
 
         const result = await useCase.update(userToUpdate);
-        
+
         expect(result.name).toBe(userToUpdate.name);
     });
 
@@ -126,5 +126,24 @@ describe("UserUsecase", () => {
         const result = await useCase.findByEmail(user.email);
 
         expect(result.email).toBe(user.email);
+    });
+
+    test("Should to delete an user", async () => {
+        const deleteUser = await useCase.create(user);
+        const deleteUser2 = await useCase.create(user2);
+        await useCase.create(
+            makeUser({
+                name: "Ramon Dias",
+                email: "ramon.dias@gmail.com",
+                docNumberPerson: 458798755,
+                userType: UserType.CUSTOMER,
+            }),
+        );
+
+        const isDeletedUser = await useCase.delete(deleteUser.uid);
+        const isDeletedUser2 = await useCase.delete(deleteUser2.uid);
+
+        expect(isDeletedUser2).toBe(true);
+        expect(isDeletedUser).toBe(true);
     });
 });

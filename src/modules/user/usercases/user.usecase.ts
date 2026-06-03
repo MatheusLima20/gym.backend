@@ -13,7 +13,7 @@ export class UserUseCase {
         return await this.userRepository.find(platform);
     }
 
-    async findBuyUID(uid: string): Promise<UserResponseDTO> {
+    async findByUID(uid: string): Promise<UserResponseDTO> {
         const user = await this.userRepository.findByUID(uid);
 
         if (!user) {
@@ -75,6 +75,18 @@ export class UserUseCase {
         }
 
         return result;
+    }
+
+    async delete(uid: string) {
+        await this.findByUID(uid);
+
+        const isDeleted = await this.userRepository.delete(uid);
+
+        if (!isDeleted) {
+            throw new Error("User not found!");
+        }
+
+        return isDeleted;
     }
 
     private async validateEmailAlreadyExists(email: string, uid?: string) {
