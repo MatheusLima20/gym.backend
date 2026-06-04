@@ -11,6 +11,7 @@ const item: CreateItemDTO = {
     isForSale: false,
     description: "Secretary Seat",
     value: 50,
+    amount: 15,
 };
 
 const item2: CreateItemDTO = {
@@ -24,6 +25,7 @@ const makeItem = (data?: Partial<CreateItemDTO>): CreateItemDTO => ({
     name: "Seat",
     isForSale: false,
     description: "Secretary Seat",
+    amount: 10,
     value: 50,
     ...data,
 });
@@ -82,6 +84,7 @@ describe("ItemUsecase", () => {
             description: "Secretary Table",
             isForSale: false,
             value: 100,
+            amount: 20,
             orderUID: resultItem.orderUID,
             uid: resultItem.uid,
         };

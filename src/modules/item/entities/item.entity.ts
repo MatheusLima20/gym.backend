@@ -9,6 +9,7 @@ export class ItemEntity implements ItemProps {
     description!: string;
     isForSale!: boolean;
     value!: number;
+    amount!: number;
     createdAt!: Date;
     updatedAt!:Date;
     
