@@ -3,7 +3,6 @@ import { UpdateOrderDTO } from "../../dtos/update-order.dto";
 import { InMemoryOrderRepository } from "../../repositories/implementations/in-memory-order.repository";
 import { OrderUseCase } from "../order.usecase";
 
-
 const order: CreateOrderDTO = {
     platform: 1,
     description: "Need seats",
@@ -50,12 +49,16 @@ describe("OrderUsecase", () => {
     test("Should find an order by order description", async () => {
         await useCase.create(order);
         await useCase.create(order2);
-        await useCase.create(makeOrder({
-            description: "Seat For New Secretary",
-            platform: 1,
-        }));
+        await useCase.create(
+            makeOrder({
+                description: "Seat For New Secretary",
+                platform: 1,
+            }),
+        );
 
-        const result = await useCase.findByDescription("Seat For New Secretary");
+        const result = await useCase.findByDescription(
+            "Seat For New Secretary",
+        );
 
         expect(result.description).toBe("Seat For New Secretary");
     });
@@ -89,7 +92,7 @@ describe("OrderUsecase", () => {
             }),
         );
 
-        const orders = await useCase.findAll();
+        const orders = await useCase.find(order.platform);
 
         expect(orders).toHaveLength(5);
     });

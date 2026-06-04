@@ -23,8 +23,11 @@ export class InMemoryOrderRepository implements IOrderRepository {
         },
     ];
 
-    async findAll(): Promise<OrderResponseDTO[]> {
-        return OrderMapper.toOrderUIDResponseList(this.orders);
+    async find(platform: number): Promise<OrderResponseDTO[]> {
+
+        const orders = this.orders.filter(order => order.platform === platform);
+
+        return OrderMapper.toOrderUIDResponseList(orders);
     }
 
     async findByUID(uid: string): Promise<OrderResponseDTO | null> {

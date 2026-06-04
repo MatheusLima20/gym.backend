@@ -46,8 +46,8 @@ export class OrderUseCase {
         return order;
     }
 
-    async findAll() {
-        const order = await this.orderRepository.findAll();
+    async find(platform: number) {
+        const order = await this.orderRepository.find(platform);
 
         if (!order) {
             throw new Error("Orders not found!");
@@ -82,7 +82,7 @@ export class OrderUseCase {
         const isDeleted = await this.orderRepository.delete(uid);
 
         if (!isDeleted) {
-            throw new Error("Orders not found!");
+            throw new Error("Orders not deleted!");
         }
 
         return isDeleted;

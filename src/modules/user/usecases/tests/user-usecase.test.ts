@@ -84,6 +84,7 @@ describe("UserUsecase", () => {
         const result2 = await useCase.update(userToUpdate2);
 
         expect(result.name).toBe(userToUpdate.name);
+        expect(result2.name).toBe(userToUpdate2.name);
     });
 
     test("should to get all registered users", async () => {
