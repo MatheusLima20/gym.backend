@@ -1,17 +1,12 @@
-export { };
-export interface User {
-    id: number;
-    name: string;
-    email: string;
-    userType: string;
-    platform: {
-        id: number,
-        name: string
-    },
+export {};
+
+export interface AuthUser {
+    uid: string;
+    platformUID: string;
 }
 
 export interface RequestAuth {
-    user: User;
+    user?: AuthUser;
 }
 
 declare global {
