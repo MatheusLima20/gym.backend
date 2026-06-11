@@ -1,12 +1,10 @@
 import { ItemUsecase } from "../item.usecase";
 import { CreateOrderItemDTO } from "../../dtos/create-order-item.dto";
-import { InMemoryOrderItemRepository } from "../../repositories/implementations/in-memory-item.repository";
 import { UpdateOrderItemDTO } from "../../dtos/update-order-item.dto";
-import { InMemoryOrderRepository } from "@/modules/order/repositories/implementations/in-memory-order.repository";
+import { makeItemUsecase } from "./order-item.factory";
 
 const item: CreateOrderItemDTO = {
     orderUID: "1",
-    platformUID: "1",
     unitPrice: 50,
     productUID: "1",
     amount: 15,
@@ -20,46 +18,34 @@ const item2: CreateOrderItemDTO = {
 const makeItem = (data?: Partial<CreateOrderItemDTO>): CreateOrderItemDTO => ({
     productUID: "1",
     orderUID: "1",
-    platformUID: "1",
     amount: 10,
     unitPrice: 50,
     ...data,
 });
 
 describe("ItemUsecase", () => {
-    let itemRepository: InMemoryOrderItemRepository;
-
-    let orderRepository: InMemoryOrderRepository;
-
     let usecase: ItemUsecase;
 
-    beforeEach(() => {
-        itemRepository = new InMemoryOrderItemRepository();
-        orderRepository = new InMemoryOrderRepository();
-
-        usecase = new ItemUsecase(itemRepository, orderRepository);
+    beforeEach(async () => {
+        ({ usecase } = await makeItemUsecase());
     });
 
     test("Should register an item", async () => {
         const result = await usecase.create(item);
-        const result1 = await usecase.create(item2);
 
-        expect(result.productUID).toBe(item.productUID);
-        expect(result1.productUID).toBe(item2.productUID);
+        expect(result).toMatchObject({
+            productUID: item.productUID,
+            orderUID: item.orderUID,
+            amount: item.amount,
+            unitPrice: item.unitPrice,
+        });
+        expect(result.uid).toBeDefined();
     });
 
     test("Should not create duplicated item", async () => {
-        await usecase.create({
-            ...item,
-            platformUID: "1",
-        });
+        await usecase.create(item);
 
-        await expect(
-            usecase.create({
-                ...item,
-                platformUID: "1",
-            }),
-        ).rejects.toThrow();
+        await expect(usecase.create(item)).rejects.toThrow();
     });
 
     test("Should update an existing item", async () => {
@@ -89,16 +75,39 @@ describe("ItemUsecase", () => {
         await usecase.create({
             ...item,
             productUID: "1",
-            platformUID: "1",
         });
 
-        await expect(
-            usecase.create({
-                ...item,
-                productUID: "1",
-                platformUID: "1",
-            }),
-        ).rejects.toThrow();
+        const resultItem = await usecase.create(item2);
+
+        const newItem: UpdateOrderItemDTO = {
+            productUID: "1",
+            unitPrice: 100,
+            amount: 20,
+            orderUID: resultItem.orderUID,
+            uid: resultItem.uid,
+        };
+
+        await expect(usecase.update(newItem)).rejects.toThrow();
+    });
+
+    test("Should update item without changing product", async () => {
+        const item = await usecase.create({
+            orderUID: "1",
+            productUID: "1",
+            amount: 10,
+            unitPrice: 50,
+        });
+
+        const updated = await usecase.update({
+            uid: item.uid,
+            orderUID: item.orderUID,
+            productUID: item.productUID,
+            amount: 20,
+            unitPrice: 100,
+        });
+
+        expect(updated.amount).toBe(20);
+        expect(updated.unitPrice).toBe(100);
     });
 
     test("Should find an item by id", async () => {
@@ -141,20 +150,20 @@ describe("ItemUsecase", () => {
     });
 
     test("Should to delete an item", async () => {
-        const seat = await usecase.create(item);
+        const itemA = await usecase.create(item);
         await usecase.create(item2);
 
-        const fridge = await usecase.create(
+        const itemB = await usecase.create(
             makeItem({
                 orderUID: "2",
                 productUID: "4",
             }),
         );
 
-        const isDeletedFridge = await usecase.delete(fridge.uid);
-        const isDeletedSeat = await usecase.delete(seat.uid);
+        const isDeletedItemA = await usecase.delete(itemB.uid);
+        const isDeletedItemB = await usecase.delete(itemA.uid);
 
-        expect(isDeletedSeat).toBe(true);
-        expect(isDeletedFridge).toBe(true);
+        expect(isDeletedItemB).toBe(true);
+        expect(isDeletedItemA).toBe(true);
     });
 });

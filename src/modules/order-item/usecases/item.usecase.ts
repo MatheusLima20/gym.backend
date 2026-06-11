@@ -4,23 +4,26 @@ import { OrderItemEntity } from "../entities/order-item.entity";
 import { IOrderItemRepository } from "../repositories/item-repository.interface";
 import { UpdateOrderItemDTO } from "../dtos/update-order-item.dto";
 import { IOrderRepository } from "@/modules/order/repositories/order-repository.interface";
+import { RequestContext } from "@/shared/context/request-context";
 
 export class ItemUsecase {
     constructor(
-        private itemRepository: IOrderItemRepository,
-        private orderRepository: IOrderRepository,
+        private readonly context: RequestContext,
+        private readonly itemRepository: IOrderItemRepository,
+        private readonly orderRepository: IOrderRepository,
     ) {}
 
     async create(data: CreateOrderItemDTO) {
         await this.validateOrderExists(data.orderUID);
 
         await this.validateItemAlreadyExistsInOrder(
-            data.productUID,
             data.orderUID,
+            data.productUID,
         );
 
         const item = new OrderItemEntity({
             uid: randomUUID(),
+            platformUID: this.context.user.platformUID,
             createdAt: new Date(),
             updatedAt: new Date(),
             ...data,
@@ -35,43 +38,14 @@ export class ItemUsecase {
         return resultItem;
     }
 
-    async findByUID(uid: string) {
-        const item = await this.itemRepository.findByUID(uid);
-
-        if (!item) {
-            throw new Error("Item not found!");
-        }
-
-        return item;
-    }
-
-    async findByOrderUID(uid: string) {
-        const item = await this.itemRepository.findByOrderUID(uid);
-
-        if (!item) {
-            throw new Error("Items not found!");
-        }
-
-        return item;
-    }
-
-    async findByProductAndOrderUID(productUID: string, orderUID: string) {
-        const item = await this.itemRepository.findByProductAndOrderUID(
-            productUID,
-            orderUID,
-        );
-
-        if (!item) {
-            throw new Error("Items not found!");
-        }
-
-        return item;
-    }
-
     async update(data: UpdateOrderItemDTO) {
         await this.validateOrderExists(data.orderUID);
 
-        await this.validateItemAlreadyExistsInOrder(data.orderUID, data.uid);
+        await this.validateItemAlreadyExistsInOrder(
+            data.orderUID,
+            data.productUID,
+            data.uid,
+        );
 
         const oldItem = await this.findByUID(data.uid);
 
@@ -85,6 +59,33 @@ export class ItemUsecase {
 
         if (!item) {
             throw new Error("Item not updated!");
+        }
+
+        return item;
+    }
+
+    async findByUID(uid: string) {
+        const item = await this.itemRepository.findByUID(uid);
+
+        if (!item) {
+            throw new Error("Item not found!");
+        }
+
+        return item;
+    }
+
+    async findByOrderUID(uid: string) {
+        return await this.itemRepository.findByOrderUID(uid);
+    }
+
+    async findByProductAndOrderUID(productUID: string, orderUID: string) {
+        const item = await this.itemRepository.findByProductAndOrderUID(
+            productUID,
+            orderUID,
+        );
+
+        if (!item) {
+            throw new Error("Items not found!");
         }
 
         return item;
@@ -104,22 +105,23 @@ export class ItemUsecase {
 
     private async validateItemAlreadyExistsInOrder(
         orderUID: string,
-        uid: string,
+        productUID: string,
+        currentUID?: string,
     ) {
         const item = await this.itemRepository.findByProductAndOrderUID(
-            uid,
+            productUID,
             orderUID,
         );
 
-        if (item) {
+        if (item && item.uid !== currentUID) {
             throw new Error("Item already exists!");
         }
     }
 
     private async validateOrderExists(uid: string) {
-        const order = await this.orderRepository.findByUID(uid);
+        const item = await this.orderRepository.findByUID(uid);
 
-        if (!order) {
+        if (!item) {
             throw new Error("Order not found!");
         }
     }

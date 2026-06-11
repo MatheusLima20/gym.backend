@@ -1,18 +1,10 @@
 export {};
-
-export interface AuthUser {
-    uid: string;
-    platformUID: string;
-}
-
-export interface RequestAuth {
-    user?: AuthUser;
-}
+import { RequestContext } from "@/shared/context/request-context";
 
 declare global {
     namespace Express {
         interface Request {
-            auth: RequestAuth;
+            auth: RequestContext;
         }
     }
 }

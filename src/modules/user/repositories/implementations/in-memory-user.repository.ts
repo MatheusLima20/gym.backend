@@ -23,6 +23,19 @@ export class InMemoryUserRepository implements IUserRepository {
             createdAt: new Date(),
             updatedAt: new Date(),
         },
+        {
+            uid: "2",
+            name: "Joan",
+            email: "joan@email.com",
+            password: "hashed_12345678",
+            docNumberBusiness: null,
+            docNumberPerson: null,
+            gender: Gender.MALE,
+            userType: UserType.ADMINISTRATOR,
+            platformUID: "2",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        },
     ];
 
     async findByUID(uid: string): Promise<UserResponseDTO | null> {

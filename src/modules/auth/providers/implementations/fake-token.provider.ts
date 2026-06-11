@@ -1,4 +1,4 @@
-import { AuthUser } from "@/@types/express";
+import { AuthUser } from "@/shared/context/auth.user";
 import { ITokenProvider } from "../token-provider.interface";
 
 export class FakeTokenProvider implements ITokenProvider {
@@ -7,11 +7,6 @@ export class FakeTokenProvider implements ITokenProvider {
     }
 
     async verify(token: string): Promise<AuthUser> {
-        const [, userUID, platformUID] = token.split("_");
-
-        return {
-            uid: userUID,
-            platformUID,
-        };
+        throw new Error("Method not implemented.");
     }
 }
