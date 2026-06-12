@@ -5,6 +5,9 @@ import { ProductEntity } from "../entities/product.entity";
 import { UpdateProductDTO } from "../dtos/update-product.dto";
 import { SearchProductDTO } from "../dtos/search-product.dto";
 import { RequestContext } from "@/shared/context/request-context";
+import { ProductAlreadyExistsError } from "../errors/product-already-exists.error";
+import { ProductNotFoundError } from "../errors/product-not-found.error";
+import { PersistenceError } from "@/shared/errors/persistence.error";
 
 export class ProductUsecase {
     constructor(
@@ -28,13 +31,13 @@ export class ProductUsecase {
             ...data,
         });
 
-        const result = await this.productRepository.register(product);
+        const created = await this.productRepository.register(product);
 
-        if (!result) {
-            throw new Error("Product not register!");
+        if (!created) {
+            throw new PersistenceError("Failed to create product.");
         }
 
-        return result;
+        return created;
     }
 
     async findByUID(uid: string) {
@@ -44,7 +47,7 @@ export class ProductUsecase {
         );
 
         if (!product) {
-            throw new Error("Product not found!");
+            throw new ProductNotFoundError({ uid });
         }
 
         return product;
@@ -57,7 +60,7 @@ export class ProductUsecase {
         );
 
         if (!product) {
-            throw new Error("Product not found!");
+            throw new ProductNotFoundError({ name });
         }
 
         return product;
@@ -98,7 +101,7 @@ export class ProductUsecase {
         const product = await this.productRepository.update(mergedProduct);
 
         if (!product) {
-            throw new Error("Product not updated!");
+            throw new PersistenceError("Failed to update product.");
         }
 
         return product;
@@ -110,7 +113,7 @@ export class ProductUsecase {
         const isDeleted = await this.productRepository.delete(uid);
 
         if (!isDeleted) {
-            throw new Error("Product not Deleted!");
+            throw new PersistenceError("Failed to delete product.");
         }
 
         return isDeleted;
@@ -127,7 +130,7 @@ export class ProductUsecase {
         );
 
         if (product && product.uid !== uid) {
-            throw new Error("Product already exists!");
+            throw new ProductAlreadyExistsError(name);
         }
     }
 }

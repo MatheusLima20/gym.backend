@@ -1,8 +1,5 @@
 import { AuthUser } from "@/shared/context/auth.user";
-import {
-    CreateProductDTO,
-    CreateProductResponseDTO,
-} from "../../dtos/create-product.dto";
+import { CreateProductDTO } from "../../dtos/create-product.dto";
 import { UpdateProductDTO } from "../../dtos/update-product.dto";
 import { ProductUsecase } from "../product.usecase";
 import { scenario } from "./core/test-factory";
