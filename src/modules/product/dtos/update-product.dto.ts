@@ -1,6 +1,5 @@
 import { ProductProps } from "../entities/product.props";
 
-
 export type UpdateProductDTO = Pick<
     ProductProps,
     | "uid"
@@ -22,5 +21,6 @@ export type UpdateProductResponseDTO = Pick<
     | "isOnSale"
     | "currentPrice"
     | "amount"
+    | "updatedBy"
     | "updatedAt"
 >;

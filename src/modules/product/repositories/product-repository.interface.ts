@@ -1,28 +1,22 @@
 import { Result } from "@/shared/result";
-import { CreateProductResponseDTO } from "../dtos/create-product.dto";
-import { ProductResponseDTO } from "../dtos/product-response.dto";
-import { UpdateProductResponseDTO } from "../dtos/update-product.dto";
 import { ProductProps } from "../entities/product.props";
-import { AppError } from "@/shared/errors/app.error";
 
 export interface IProductRepository {
     search(filters: {
         name?: string;
         description?: string;
         platformUID: string;
-    }): Promise<ProductResponseDTO[]>;
+    }): Promise<Result<ProductProps[]>>;
     findByUID(
         uid: string,
         platformUID: string,
-    ): Promise<ProductResponseDTO | null>;
+    ): Promise<Result<ProductProps | null>>;
     findByName(
         name: string,
         platformUID: string,
-    ): Promise<ProductResponseDTO | null>;
-    find(platformUID: string): Promise<ProductResponseDTO[]>;
-    register(
-        user: ProductProps,
-    ): Promise<Result<CreateProductResponseDTO, AppError>>;
-    update(user: ProductProps): Promise<UpdateProductResponseDTO | null>;
-    delete(uid: string): Promise<boolean>;
+    ): Promise<Result<ProductProps | null>>;
+    find(platformUID: string): Promise<Result<ProductProps[]>>;
+    register(user: ProductProps): Promise<Result<ProductProps>>;
+    update(user: ProductProps): Promise<Result<ProductProps>>;
+    delete(uid: string): Promise<Result<void>>;
 }

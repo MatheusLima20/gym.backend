@@ -1,12 +1,11 @@
-import { CreateProductResponseDTO } from "../../dtos/create-product.dto";
-import { ProductResponseDTO } from "../../dtos/product-response.dto";
-import { UpdateProductResponseDTO } from "../../dtos/update-product.dto";
-import { ProductEntity } from "../../entities/product.entity";
-import { ProductMapper } from "../../mappers/product.mapper";
+import { Result } from "@/shared/result";
 import { IProductRepository } from "../product-repository.interface";
+import { ProductProps } from "../../entities/product.props";
+import { ResultFactory } from "@/shared/result/result.factory";
+import { PersistenceError } from "@/shared/errors/persistence.error";
 
 export class InMemoryProductRepository implements IProductRepository {
-    products: ProductEntity[] = [
+    products: ProductProps[] = [
         {
             uid: "1",
             name: "Table",
@@ -26,24 +25,20 @@ export class InMemoryProductRepository implements IProductRepository {
     async findByName(
         name: string,
         platformUID: string,
-    ): Promise<ProductResponseDTO | null> {
+    ): Promise<Result<ProductProps | null>> {
         const products = this.products.filter(
             (product) => product.platformUID === platformUID,
         );
         const product = products.find((product) => product.name === name);
 
-        if (!product) {
-            return null;
-        }
-
-        return product;
+        return ResultFactory.success(product ?? null);
     }
 
     async search(filters: {
         name?: string;
         description?: string;
         platformUID: string;
-    }): Promise<ProductResponseDTO[]> {
+    }): Promise<Result<ProductProps[]>> {
         const name = filters.name?.toLowerCase();
         const description = filters.description?.toLowerCase();
 
@@ -63,57 +58,58 @@ export class InMemoryProductRepository implements IProductRepository {
             );
         }
 
-        return ProductMapper.toPlatformUIDResponseList(products);
+        return ResultFactory.success(products);
     }
 
-    async find(platformUID: string): Promise<ProductResponseDTO[]> {
+    async find(platformUID: string): Promise<Result<ProductProps[]>> {
         const products = this.products.filter(
             (product) => product.platformUID === platformUID,
         );
 
-        return ProductMapper.toPlatformUIDResponseList(products);
+        return ResultFactory.success(products);
     }
 
-    async findByUID(uid: string, platformUID: string): Promise<ProductResponseDTO | null> {
+    async findByUID(
+        uid: string,
+        platformUID: string,
+    ): Promise<Result<ProductProps | null>> {
         const products = this.products.filter(
             (product) => product.platformUID === platformUID,
         );
         const product = products.find((product) => product.uid === uid);
 
-        if (!product) {
-            return null;
-        }
-
-        return product;
+        return ResultFactory.success(product ?? null);
     }
 
-    async register(
-        product: ProductEntity,
-    ): Promise<CreateProductResponseDTO | null> {
+    async register(product: ProductProps): Promise<Result<ProductProps>> {
         this.products.push(product);
 
-        return product;
+        return ResultFactory.success(product);
     }
 
-    async update(
-        product: ProductEntity,
-    ): Promise<UpdateProductResponseDTO | null> {
+    async update(product: ProductProps): Promise<Result<ProductProps>> {
         const index = this.products.findIndex(
             (oldProduct) => oldProduct.uid === product.uid,
         );
 
         const updatedProduct = (this.products[index] = product);
 
-        return updatedProduct;
+        return ResultFactory.success(updatedProduct);
     }
 
-    async delete(uid: string): Promise<boolean> {
+    async delete(uid: string): Promise<Result<void>> {
         const index = this.products.findIndex(
             (oldProduct) => oldProduct.uid === uid,
         );
 
         const removedProduct = this.products.splice(index, 1);
 
-        return !!removedProduct;
+        if (!removedProduct.length) {
+            return ResultFactory.failure(
+                new PersistenceError("Delete operation filed."),
+            );
+        }
+
+        return ResultFactory.ok();
     }
 }

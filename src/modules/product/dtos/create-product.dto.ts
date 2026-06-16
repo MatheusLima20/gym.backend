@@ -21,4 +21,5 @@ export type CreateProductResponseDTO = Pick<
     | "description"
     | "platformUID"
     | "createdBy"
+    | "createdAt"
 >;

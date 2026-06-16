@@ -3,6 +3,9 @@ import { CreateProductDTO } from "../../dtos/create-product.dto";
 import { UpdateProductDTO } from "../../dtos/update-product.dto";
 import { ProductUsecase } from "../product.usecase";
 import { scenario } from "./core/test-factory";
+import { expectFailure, expectSuccess } from "@/shared/tests/result.helper";
+import { ProductAlreadyExistsError } from "../../errors/product-already-exists.error";
+import { ProductNotFoundError } from "../../errors/product-not-found.error";
 
 describe("ProductUsecase", () => {
     const dataProduct1: CreateProductDTO = {
@@ -42,10 +45,12 @@ describe("ProductUsecase", () => {
     });
 
     test("Should register a product", async () => {
-        const [productCreatedA, productCreatedB] = await Promise.all([
-            usecaseUser1.create(dataProduct1),
-            usecaseUser2.create(dataProduct2),
-        ]);
+        const [productCreatedA, productCreatedB] = (
+            await Promise.all([
+                usecaseUser1.create(dataProduct1),
+                usecaseUser2.create(dataProduct2),
+            ])
+        ).map(expectSuccess);
 
         expect(productCreatedA).toMatchObject({
             name: dataProduct1.name,
@@ -75,19 +80,21 @@ describe("ProductUsecase", () => {
     test("Should allow same product name in different platforms", async () => {
         await usecaseUser1.create(dataProduct1);
 
-        await expect(usecaseUser2.create(dataProduct1)).resolves.not.toThrow();
+        expectSuccess(await usecaseUser2.create(dataProduct1));
     });
 
     test("Should not register duplicated product", async () => {
         await usecaseUser1.create(dataProduct1);
-
-        await expect(usecaseUser1.create(dataProduct1)).rejects.toThrow(
-            "Product already exists!",
+        expectFailure(
+            await usecaseUser1.create(dataProduct1),
+            ProductAlreadyExistsError,
         );
     });
 
     test("Should update a product", async () => {
-        const productCreatedA = await usecaseUser1.create(dataProduct1);
+        const productCreatedA = expectSuccess(
+            await usecaseUser1.create(dataProduct1),
+        );
         await usecaseUser1.create(dataProduct2);
 
         const mergedProduct: UpdateProductDTO = {
@@ -98,7 +105,9 @@ describe("ProductUsecase", () => {
             updatedBy: user1.uid,
         };
 
-        const productUpdated = await usecaseUser1.update(mergedProduct);
+        const productUpdated = expectSuccess(
+            await usecaseUser1.update(mergedProduct),
+        );
 
         expect(productUpdated).toMatchObject({
             uid: productCreatedA.uid,
@@ -110,13 +119,25 @@ describe("ProductUsecase", () => {
             updatedBy: user1.uid,
         });
 
-        const foundProduct = await usecaseUser1.findByUID(productUpdated.uid);
+        const foundProduct = expectSuccess(
+            await usecaseUser1.findByUID(productUpdated.uid),
+        );
 
-        expect(foundProduct).toEqual(productUpdated);
+        expect(foundProduct).toMatchObject({
+            uid: productUpdated.uid,
+            description: productUpdated.description,
+            currentPrice: productUpdated.currentPrice,
+            isForSale: productUpdated.isForSale,
+            isOnSale: productUpdated.isOnSale,
+            amount: productUpdated.amount,
+            updatedBy: user1.uid,
+        });
     });
 
     test("Should not update duplicated product", async () => {
-        const productCreatedA = await usecaseUser1.create(dataProduct1);
+        const productCreatedA = expectSuccess(
+            await usecaseUser1.create(dataProduct1),
+        );
         await usecaseUser1.create(dataProduct2);
 
         const mergedProduct: UpdateProductDTO = {
@@ -128,21 +149,24 @@ describe("ProductUsecase", () => {
             updatedBy: "1",
         };
 
-        await expect(usecaseUser1.update(mergedProduct)).rejects.toThrow(
-            "Product already exists!",
+        expectFailure(
+            await usecaseUser1.update(mergedProduct),
+            ProductAlreadyExistsError,
         );
     });
 
     test("Should find a product by uid", async () => {
         await usecaseUser1.create(dataProduct1);
         await usecaseUser1.create(dataProduct2);
-        const productCreatedC = await usecaseUser1.create(
-            makeProduct({
-                name: "Halters 10KG",
-                description: "Buy a gym equipment to training arms.",
-                currentPrice: 20,
-                amount: 2,
-            }),
+        const productCreatedC = expectSuccess(
+            await usecaseUser1.create(
+                makeProduct({
+                    name: "Halters 10KG",
+                    description: "Buy a gym equipment to training arms.",
+                    currentPrice: 20,
+                    amount: 2,
+                }),
+            ),
         );
 
         const foundProduct = await usecaseUser1.findByUID(productCreatedC.uid);
@@ -151,7 +175,10 @@ describe("ProductUsecase", () => {
     });
 
     test("Should throw when product uid does not exist", async () => {
-        await expect(usecaseUser1.findByUID("777")).rejects.toThrow();
+        expectFailure(
+            await usecaseUser1.findByUID("777"),
+            ProductNotFoundError,
+        );
     });
 
     test("Should find all platform products", async () => {
@@ -165,8 +192,8 @@ describe("ProductUsecase", () => {
             }),
         );
 
-        const platform1Products = await usecaseUser1.find();
-        const platform2Products = await usecaseUser2.find();
+        const platform1Products = expectSuccess(await usecaseUser1.find());
+        const platform2Products = expectSuccess(await usecaseUser2.find());
 
         expect(
             platform1Products.every(
@@ -186,42 +213,63 @@ describe("ProductUsecase", () => {
     test("Should find product by name", async () => {
         await usecaseUser2.create(dataProduct1);
         await usecaseUser2.create(dataProduct2);
-        const createdProduct = await usecaseUser2.create(
-            makeProduct({
-                name: "Halter",
-                description: "Buy a gym equipment to training arms.",
-                amount: 2,
-            }),
+        const createdProduct = expectSuccess(
+            await usecaseUser2.create(
+                makeProduct({
+                    name: "Halter",
+                    description: "Buy a gym equipment to training arms.",
+                    amount: 2,
+                }),
+            ),
         );
 
-        const foundProduct = await usecaseUser2.findByName(createdProduct.name);
+        const foundProduct = expectSuccess(
+            await usecaseUser2.findByName(createdProduct.name),
+        );
 
-        expect(foundProduct).toEqual(createdProduct);
+        expect(foundProduct).toMatchObject({
+            uid: createdProduct.uid,
+            name: createdProduct.name,
+            description: createdProduct.description,
+            platformUID: user2.platformUID,
+            currentPrice: createdProduct.currentPrice,
+            isForSale: createdProduct.isForSale,
+            isOnSale: createdProduct.isOnSale,
+            amount: createdProduct.amount,
+            createdBy: user2.uid,
+            createdAt: createdProduct.createdAt,
+        });
     });
 
     test("Should search all products by name and description", async () => {
         await usecaseUser2.create(dataProduct1);
         await usecaseUser2.create(dataProduct2);
-        const createdProductA = await usecaseUser2.create(
-            makeProduct({
-                name: "Halter 2KG",
-                description: "Buy a gym equipment to training arms.",
-                amount: 2,
-            }),
+        const createdProductA = expectSuccess(
+            await usecaseUser2.create(
+                makeProduct({
+                    name: "Halter 2KG",
+                    description: "Buy a gym equipment to training arms.",
+                    amount: 2,
+                }),
+            ),
         );
 
-        const createdProductB = await usecaseUser2.create(
-            makeProduct({
-                name: "Halter 5KG",
-                description: "Buy a gym equipment to training arms.",
-                amount: 2,
-            }),
+        const createdProductB = expectSuccess(
+            await usecaseUser2.create(
+                makeProduct({
+                    name: "Halter 5KG",
+                    description: "Buy a gym equipment to training arms.",
+                    amount: 2,
+                }),
+            ),
         );
 
-        const foundProducts = await usecaseUser2.search({
-            name: "Halter",
-            description: "arms",
-        });
+        const foundProducts = expectSuccess(
+            await usecaseUser2.search({
+                name: "Halter",
+                description: "arms",
+            }),
+        );
 
         expect(
             foundProducts.every((product) => product.name.includes("Halter")),
@@ -242,26 +290,30 @@ describe("ProductUsecase", () => {
     });
 
     test("Should to delete a product", async () => {
-        const createdProductA = await usecaseUser1.create(dataProduct1);
+        const createdProductA = expectSuccess(
+            await usecaseUser1.create(dataProduct1),
+        );
         await usecaseUser1.create(dataProduct2);
 
-        const productBefore = await usecaseUser1.find();
+        const productBefore = expectSuccess(await usecaseUser1.find());
 
-        const isDeletedProduct = await usecaseUser1.delete(createdProductA.uid);
+        expectSuccess(await usecaseUser1.delete(createdProductA.uid));
 
-        const productAfter = await usecaseUser1.find();
+        const productAfter = expectSuccess(await usecaseUser1.find());
 
-        expect(isDeletedProduct).toBe(true);
         expect(productBefore.length).not.toEqual(productAfter.length);
 
-        await expect(
-            usecaseUser1.findByUID(createdProductA.uid),
-        ).rejects.toThrow("Product not found!");
+        expectFailure(
+            await usecaseUser1.findByUID(createdProductA.uid),
+            ProductNotFoundError,
+        );
     });
 
     test("Should not find products from another platform", async () => {
-        const product = await usecaseUser1.create(dataProduct1);
-
-        await expect(usecaseUser2.findByUID(product.uid)).rejects.toThrow();
+        const product = expectSuccess(await usecaseUser1.create(dataProduct1));
+        expectFailure(
+            await usecaseUser2.findByUID(product.uid),
+            ProductNotFoundError,
+        );
     });
 });
