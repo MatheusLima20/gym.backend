@@ -1,4 +1,4 @@
-import { AuthUser } from "@/@types/express";
+import { AuthUser } from "@/shared/context/auth.user";
 import jwt from "jsonwebtoken";
 
 export class JWTProvider {
