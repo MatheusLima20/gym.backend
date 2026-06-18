@@ -3,3 +3,7 @@ export abstract class AppError extends Error {
         super(message);
     }
 }
+
+export type AppErrorClass<E extends AppError = AppError> = new (
+    ...args: any[]
+) => E;

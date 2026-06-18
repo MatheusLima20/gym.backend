@@ -1,4 +1,4 @@
-import { AppError } from "../errors/app.error";
+import { AppError, AppErrorClass } from "../errors/app.error";
 import { Result } from "../result";
 
 export function expectSuccess<T>(result: Result<T>): T {
@@ -13,7 +13,7 @@ export function expectSuccess<T>(result: Result<T>): T {
 
 export function expectFailure<E extends AppError>(
     result: Result<unknown, E>,
-    type: new (...args: any[]) => E,
+    type: AppErrorClass<E>,
 ): E {
     expect(result.success).toBe(false);
 

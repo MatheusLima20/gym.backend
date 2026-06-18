@@ -1,21 +1,16 @@
 import { Result } from "@/shared/result";
 import { ProductProps } from "../entities/product.props";
+import { FindProductsDTO } from "../dtos/find-products.dto";
 
 export interface IProductRepository {
-    search(filters: {
-        name?: string;
-        description?: string;
-        platformUID: string;
-    }): Promise<Result<ProductProps[]>>;
     findByUID(
         uid: string,
         platformUID: string,
     ): Promise<Result<ProductProps | null>>;
-    findByName(
-        name: string,
+    find(
         platformUID: string,
-    ): Promise<Result<ProductProps | null>>;
-    find(platformUID: string): Promise<Result<ProductProps[]>>;
+        filters?: FindProductsDTO,
+    ): Promise<Result<ProductProps[]>>;
     register(user: ProductProps): Promise<Result<ProductProps>>;
     update(user: ProductProps): Promise<Result<ProductProps>>;
     delete(uid: string): Promise<Result<void>>;

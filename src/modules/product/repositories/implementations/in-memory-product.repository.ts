@@ -3,6 +3,7 @@ import { IProductRepository } from "../product-repository.interface";
 import { ProductProps } from "../../entities/product.props";
 import { ResultFactory } from "@/shared/result/result.factory";
 import { PersistenceError } from "@/shared/errors/persistence.error";
+import { FindProductsDTO } from "../../dtos/find-products.dto";
 
 export class InMemoryProductRepository implements IProductRepository {
     products: ProductProps[] = [
@@ -22,49 +23,51 @@ export class InMemoryProductRepository implements IProductRepository {
         },
     ];
 
-    async findByName(
-        name: string,
+    async find(
         platformUID: string,
-    ): Promise<Result<ProductProps | null>> {
-        const products = this.products.filter(
+        filters?: FindProductsDTO,
+    ): Promise<Result<ProductProps[]>> {
+        let products = this.products.filter(
             (product) => product.platformUID === platformUID,
         );
-        const product = products.find((product) => product.name === name);
 
-        return ResultFactory.success(product ?? null);
-    }
+        if (filters?.name) {
+            const name = filters.name.toLowerCase();
 
-    async search(filters: {
-        name?: string;
-        description?: string;
-        platformUID: string;
-    }): Promise<Result<ProductProps[]>> {
-        const name = filters.name?.toLowerCase();
-        const description = filters.description?.toLowerCase();
-
-        let products = this.products.filter(
-            (product) => product.platformUID === filters.platformUID,
-        );
-
-        if (name) {
             products = products.filter((product) =>
                 product.name.toLowerCase().includes(name),
             );
         }
 
-        if (description) {
+        if (filters?.description) {
+            const description = filters.description.toLowerCase();
+
             products = products.filter((product) =>
-                product.description?.toLowerCase().includes(description),
+                product.description.toLowerCase().includes(description),
             );
         }
 
-        return ResultFactory.success(products);
-    }
+        if (filters?.page && filters?.limit) {
+            const start = (filters.page - 1) * filters.limit;
+            const end = start + filters.limit;
 
-    async find(platformUID: string): Promise<Result<ProductProps[]>> {
-        const products = this.products.filter(
-            (product) => product.platformUID === platformUID,
-        );
+            products = products.slice(start, end);
+        }
+
+        if (filters?.orderBy) {
+            const orderBy = filters.orderBy;
+            const order = filters.order ?? "asc";
+
+            products.sort((a, b) => {
+                const left = a[orderBy];
+                const right = b[orderBy];
+
+                if (left < right) return order === "asc" ? -1 : 1;
+                if (left > right) return order === "asc" ? 1 : -1;
+
+                return 0;
+            });
+        }
 
         return ResultFactory.success(products);
     }

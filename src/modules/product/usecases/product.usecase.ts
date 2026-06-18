@@ -9,7 +9,6 @@ import {
     UpdateProductDTO,
     UpdateProductResponseDTO,
 } from "../dtos/update-product.dto";
-import { SearchProductDTO } from "../dtos/search-product.dto";
 import { RequestContext } from "@/shared/context/request-context";
 import { ProductAlreadyExistsError } from "../errors/product-already-exists.error";
 import { ProductNotFoundError } from "../errors/product-not-found.error";
@@ -21,6 +20,7 @@ import { ResultMapper } from "@/shared/result/result.mapper";
 import { ProductResponseDTO } from "../dtos/product-response.dto";
 import { AppError } from "@/shared/errors/app.error";
 import { ProductProps } from "../entities/product.props";
+import { FindProductsDTO } from "../dtos/find-products.dto";
 
 export class ProductUsecase {
     constructor(
@@ -75,32 +75,9 @@ export class ProductUsecase {
         return ResultMapper.map(product, ProductMapper.toResponseDTO);
     }
 
-    async findByName(name: string): Promise<Result<ProductResponseDTO>> {
-        const result = await this.productRepository.findByName(
-            name,
-            this.context.user.platformUID,
-        );
-
-        const product = ResultMapper.requireData(
-            result,
-            new ProductNotFoundError({ name }),
-        );
-
-        return ResultMapper.map(product, ProductMapper.toResponseDTO);
-    }
-
-    async search(
-        filters: SearchProductDTO,
+    async find(
+        filters?: FindProductsDTO,
     ): Promise<Result<ProductResponseDTO[]>> {
-        const products = await this.productRepository.search({
-            ...filters,
-            platformUID: this.context.user.platformUID,
-        });
-
-        return ResultMapper.map(products, ProductMapper.toResponseDTOList);
-    }
-
-    async find(): Promise<Result<ProductResponseDTO[]>> {
         const product = await this.productRepository.find(
             this.context.user.platformUID,
         );
@@ -171,17 +148,16 @@ export class ProductUsecase {
         name: string,
         platformUID: string,
         uid?: string,
-    ): Promise<FailureResult<AppError> | SuccessResult<ProductProps | null>> {
-        const result = await this.productRepository.findByName(
+    ): Promise<FailureResult<AppError> | SuccessResult<ProductProps[] | null>> {
+        const result = await this.productRepository.find(platformUID, {
             name,
-            platformUID,
-        );
+        });
 
         if (!result.success) {
             return result;
         }
 
-        const product = result.data;
+        const [product] = result.data;
 
         if (product && product.uid !== uid) {
             return ResultFactory.failure(new ProductAlreadyExistsError(name));
