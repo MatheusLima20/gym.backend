@@ -6,27 +6,12 @@ import { PersistenceError } from "@/shared/errors/persistence.error";
 import { FindProductsDTO } from "../../dtos/find-products.dto";
 
 export class InMemoryProductRepository implements IProductRepository {
-    products: ProductProps[] = [
-        {
-            uid: "1",
-            name: "Table",
-            platformUID: "1",
-            description: "Why Sale.",
-            currentPrice: 20,
-            amount: 10,
-            isForSale: false,
-            isOnSale: false,
-            createdBy: "1",
-            updatedBy: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        },
-    ];
+    products: ProductProps[] = [];
 
     async find(
         platformUID: string,
         filters?: FindProductsDTO,
-    ): Promise<Result<ProductProps[]>> {
+    ): Promise<Result<ProductProps[], PersistenceError>> {
         let products = this.products.filter(
             (product) => product.platformUID === platformUID,
         );
@@ -47,13 +32,6 @@ export class InMemoryProductRepository implements IProductRepository {
             );
         }
 
-        if (filters?.page && filters?.limit) {
-            const start = (filters.page - 1) * filters.limit;
-            const end = start + filters.limit;
-
-            products = products.slice(start, end);
-        }
-
         if (filters?.orderBy) {
             const orderBy = filters.orderBy;
             const order = filters.order ?? "asc";
@@ -67,6 +45,13 @@ export class InMemoryProductRepository implements IProductRepository {
 
                 return 0;
             });
+        }
+
+        if (filters?.page && filters?.limit) {
+            const start = (filters.page - 1) * filters.limit;
+            const end = start + filters.limit;
+
+            products = products.slice(start, end);
         }
 
         return ResultFactory.success(products);

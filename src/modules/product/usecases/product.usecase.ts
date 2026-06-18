@@ -21,6 +21,7 @@ import { ProductResponseDTO } from "../dtos/product-response.dto";
 import { AppError } from "@/shared/errors/app.error";
 import { ProductProps } from "../entities/product.props";
 import { FindProductsDTO } from "../dtos/find-products.dto";
+import { isFailure } from "@/shared/result/result.guard";
 
 export class ProductUsecase {
     constructor(
@@ -80,6 +81,7 @@ export class ProductUsecase {
     ): Promise<Result<ProductResponseDTO[]>> {
         const product = await this.productRepository.find(
             this.context.user.platformUID,
+            filters,
         );
 
         return ResultMapper.map(product, ProductMapper.toResponseDTOList);
@@ -148,12 +150,12 @@ export class ProductUsecase {
         name: string,
         platformUID: string,
         uid?: string,
-    ): Promise<FailureResult<AppError> | SuccessResult<ProductProps[] | null>> {
+    ): Promise<FailureResult<AppError> | SuccessResult<ProductProps | null>> {
         const result = await this.productRepository.find(platformUID, {
             name,
         });
 
-        if (!result.success) {
+        if (isFailure(result)) {
             return result;
         }
 
@@ -163,6 +165,6 @@ export class ProductUsecase {
             return ResultFactory.failure(new ProductAlreadyExistsError(name));
         }
 
-        return result;
+        return ResultFactory.success(product);
     }
 }

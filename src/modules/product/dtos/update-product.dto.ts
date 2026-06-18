@@ -9,7 +9,6 @@ export type UpdateProductDTO = Pick<
     | "isOnSale"
     | "amount"
     | "currentPrice"
-    | "updatedBy"
 >;
 
 export type UpdateProductResponseDTO = Pick<
