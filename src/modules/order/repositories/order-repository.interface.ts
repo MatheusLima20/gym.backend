@@ -1,13 +1,14 @@
-import { CreateOrderResponseDTO } from "../dtos/create-order.dto";
-import { OrderResponseDTO } from "../dtos/order-response.dto";
-import { UpdateOrderResponseDTO } from "../dtos/update-order.dto";
+import { Result } from "@/shared/result";
+import { FindOrdersDTO } from "../dtos/find-order.dto";
 import { OrderProps } from "../entities/order.props";
 
 export interface IOrderRepository {
-    find(platformUID: string): Promise<OrderResponseDTO[]>;
-    findByUID(uid: string): Promise<OrderResponseDTO | null>;
-    findByDescription(description: string): Promise<OrderResponseDTO | null>;
-    register(order: OrderProps): Promise<CreateOrderResponseDTO | null>;
-    update(order: OrderProps): Promise<UpdateOrderResponseDTO | null>;
-    delete(uid: string): Promise<boolean>;
+    findByUID(uid: string, platformUID: string): Promise<Result<OrderProps | null>>;
+    find(
+            platformUID: string,
+            filters?: FindOrdersDTO,
+        ): Promise<Result<OrderProps[]>>;
+    register(order: OrderProps): Promise<Result<OrderProps>>;
+    update(order: OrderProps): Promise<Result<OrderProps>>;
+    delete(uid: string): Promise<Result<void>>;
 }

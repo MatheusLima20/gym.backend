@@ -1,157 +1,184 @@
+import { AuthUser } from "@/shared/context/auth.user";
 import { CreateOrderDTO } from "../../dtos/create-order.dto";
 import { UpdateOrderDTO } from "../../dtos/update-order.dto";
-import { InMemoryOrderRepository } from "../../repositories/implementations/in-memory-order.repository";
 import { OrderUsecase } from "../order.usecase";
-
-const order: CreateOrderDTO = {
-    platformUID: "1",
-    description: "Need seats",
-    createdBy: "1",
-};
-
-const order2: CreateOrderDTO = {
-    ...order,
-    description: "Need Tables",
-};
-
-const makeOrder = (data?: Partial<CreateOrderDTO>): CreateOrderDTO => ({
-    platformUID: "1",
-    description: "Secretary Seat",
-    createdBy: "1",
-    ...data,
-});
+import { expectFailure, expectSuccess } from "@/shared/tests/result.helper";
+import { OrderAlreadyExistsError } from "../../errors/order-already-exists.error";
+import { OrderNotFoundError } from "../../errors/order-not-found.error";
+import { scenario } from "../core/test-factory";
+import { expectCreateOrderFailure, setupOrder, setupOrders } from "../helpers/order.helper";
 
 describe("OrderUsecase", () => {
-    let repository: InMemoryOrderRepository;
+    const dataOrder1: CreateOrderDTO = {
+        description: "Need Seats",
+    };
 
-    let usecase: OrderUsecase;
+    const dataOrder2: CreateOrderDTO = {
+        ...dataOrder1,
+        description: "Need Tables",
+    };
 
-    beforeEach(() => {
-        repository = new InMemoryOrderRepository();
+    const makeOrder = (
+        data?: Partial<CreateOrderDTO>,
+    ): CreateOrderDTO => ({
+        ...dataOrder1,
+        ...data,
+    });
 
-        usecase = new OrderUsecase(repository);
+    let usecaseUser1!: OrderUsecase;
+    let usecaseUser2!: OrderUsecase;
+
+    let user1: AuthUser;
+    let user2: AuthUser;
+
+    beforeEach(async () => {
+        ({
+            usecases: [usecaseUser1, usecaseUser2],
+            users: [user1, user2],
+        } = (await scenario().loadUsers(["1", "2"]))
+            .createUsecases()
+            .build());
     });
 
     test("Should register an order", async () => {
-        const result = await usecase.create(order);
-        const result1 = await usecase.create(order2);
+        const [orderA, orderB] = await Promise.all([
+            setupOrder(usecaseUser1, dataOrder1),
+            setupOrder(usecaseUser2, dataOrder2),
+        ]);
 
-        expect(result.description).toBe(order.description);
-        expect(result1.description).toBe(order2.description);
+        expect(orderA).toMatchObject({
+            description: dataOrder1.description,
+            platformUID: user1.platformUID,
+            createdBy: user1.uid,
+            uid: expect.any(String),
+        });
+
+        expect(orderB).toMatchObject({
+            description: dataOrder2.description,
+            platformUID: user2.platformUID,
+            createdBy: user2.uid,
+            uid: expect.any(String),
+        });
+    });
+
+    test("Should allow same order description in different platforms", async () => {
+        await setupOrder(usecaseUser1, dataOrder1);
+        await setupOrder(usecaseUser2, dataOrder1);
     });
 
     test("Should not create duplicated order", async () => {
-        await usecase.create({
-            description: "Need Tables.",
-            platformUID: "1",
-            createdBy: "2",
-        });
+        await setupOrder(usecaseUser1, dataOrder1);
 
-        await expect(
-            usecase.create({
-                description: "Need Tables.",
-                platformUID: "1",
-                createdBy: "2",
-            }),
-        ).rejects.toThrow();
+        await expectCreateOrderFailure(
+            usecaseUser1,
+            dataOrder1,
+            OrderAlreadyExistsError,
+        );
     });
 
-    test("Should update an existing order", async () => {
-        await usecase.create(
-            makeOrder({
-                description: "Fridge to the main room.",
-            }),
+    test("Should update an order", async () => {
+        const [orderCreated] = await setupOrders(
+            usecaseUser1,
+            dataOrder1,
+            dataOrder2,
         );
-        await usecase.create(order2);
-        const resultOrder = await usecase.create(order);
 
-        const newOrder: UpdateOrderDTO = {
-            description: "Need Secretary Table",
-            updatedBy: "3",
-            uid: resultOrder.uid,
+        const updated: UpdateOrderDTO = {
+            uid: orderCreated.uid,
+            description: "Need Updated Tables",
         };
 
-        const orderUpdated = await usecase.update(newOrder);
+        const orderUpdated = expectSuccess(
+            await usecaseUser1.update(updated),
+        );
 
-        expect(orderUpdated.description).toBe(newOrder.description);
+        expect(orderUpdated).toMatchObject({
+            uid: orderCreated.uid,
+            description: updated.description,
+            updatedBy: user1.uid,
+        });
+
+        const found = expectSuccess(
+            await usecaseUser1.findByUID(orderUpdated.uid),
+        );
+
+        expect(found).toMatchObject({
+            uid: orderUpdated.uid,
+            description: updated.description,
+            updatedBy: user1.uid,
+        });
     });
 
     test("Should not update duplicated order", async () => {
-        const result = await usecase.create({
-            description: "Need Tables.",
-            platformUID: "1",
-            createdBy: "1",
+        const [orderA] = await setupOrders(
+            usecaseUser1,
+            dataOrder1,
+            dataOrder2,
+        );
+
+        expectFailure(
+            await usecaseUser1.update({
+                uid: orderA.uid,
+                description: dataOrder2.description,
+            }),
+            OrderAlreadyExistsError,
+        );
+    });
+
+    test("Should find order by uid", async () => {
+        const [created] = await setupOrders(usecaseUser1, dataOrder1);
+
+        const found = expectSuccess(
+            await usecaseUser1.findByUID(created.uid),
+        );
+
+        expect(found).toMatchObject({
+            uid: created.uid,
+            description: created.description,
         });
-
-        await usecase.create({
-            description: "Need Seats.",
-            platformUID: "1",
-            createdBy: "2",
-        });
-
-        await expect(
-            usecase.update({
-                uid: result.uid,
-                description: "Need Seats.",
-                updatedBy: "1",
-            }),
-        ).rejects.toThrow();
     });
 
-    test("Should find an order by id", async () => {
-        const resultCreated = await usecase.create(order);
-
-        const result = await usecase.findByUID(resultCreated.uid);
-
-        expect(result.uid).toBe(resultCreated.uid);
+    test("Should throw when order not found", async () => {
+        expectFailure(
+            await usecaseUser1.findByUID("invalid-id"),
+            OrderNotFoundError,
+        );
     });
 
-    test("Should find an order by order description", async () => {
-        await usecase.create(order);
-        await usecase.create(order2);
-        await usecase.create(
-            makeOrder({
-                description: "Seat For New Secretary",
-                platformUID: "1",
-            }),
-        );
+    test("Should return all orders of platform", async () => {
+        await setupOrders(usecaseUser1, dataOrder1, dataOrder2);
 
-        const result = await usecase.findByDescription(
-            "Seat For New Secretary",
-        );
+        const orders = expectSuccess(await usecaseUser1.find());
 
-        expect(result.description).toBe("Seat For New Secretary");
+        expect(orders).toHaveLength(2);
+
+        expect(
+            orders.every(
+                (o) => o.platformUID === user1.platformUID,
+            ),
+        ).toBe(true);
     });
 
-    test("Should return all existing orders", async () => {
-        await usecase.create(order2);
-        await usecase.create(order);
+    test("Should return empty list when no orders exist", async () => {
+        const orders = expectSuccess(await usecaseUser2.find());
 
-        await usecase.create(
-            makeOrder({
-                description: "Fridge to the main room.",
-            }),
-        );
-
-        const orders = await usecase.find(order.platformUID);
-
-        expect(orders).toHaveLength(5);
+        expect(orders).toEqual([]);
     });
 
-    test("Should to delete an order", async () => {
-        const seatOrder = await usecase.create(order);
-        await usecase.create(order2);
+    test("Should delete order", async () => {
+        const [created] = await setupOrders(usecaseUser1, dataOrder1);
 
-        const fridgeOrder = await usecase.create(
-            makeOrder({
-                description: "Fridge to the main room.",
-            }),
+        const before = expectSuccess(await usecaseUser1.find());
+
+        expectSuccess(await usecaseUser1.delete(created.uid));
+
+        const after = expectSuccess(await usecaseUser1.find());
+
+        expect(after.length).toBe(before.length - 1);
+
+        expectFailure(
+            await usecaseUser1.findByUID(created.uid),
+            OrderNotFoundError,
         );
-
-        const isDeletedFridge = await usecase.delete(fridgeOrder.uid);
-        const isDeletedSeat = await usecase.delete(seatOrder.uid);
-
-        expect(isDeletedSeat).toBe(true);
-        expect(isDeletedFridge).toBe(true);
     });
 });

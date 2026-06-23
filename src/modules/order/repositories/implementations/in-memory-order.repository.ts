@@ -1,10 +1,13 @@
+import { Result } from "@/shared/result";
 import { CreateOrderResponseDTO } from "../../dtos/create-order.dto";
 import { OrderResponseDTO } from "../../dtos/order-response.dto";
 import { UpdateOrderResponseDTO } from "../../dtos/update-order.dto";
 import { OrderEntity } from "../../entities/order.entity";
 import { OrderProps } from "../../entities/order.props";
-import { OrderMapper } from "../../mappers/order.mapper";
 import { IOrderRepository } from "../order-repository.interface";
+import { ResultFactory } from "@/shared/result/result.factory";
+import { PersistenceError } from "@/shared/errors/persistence.error";
+import { FindOrdersDTO } from "../../dtos/find-order.dto";
 
 export class InMemoryOrderRepository implements IOrderRepository {
     private orders: OrderProps[] = [
@@ -28,47 +31,97 @@ export class InMemoryOrderRepository implements IOrderRepository {
         },
     ];
 
-    async find(platformUID: string): Promise<OrderResponseDTO[]> {
+    async find(
+            platformUID: string,
+            filters?: FindOrdersDTO,
+        ): Promise<Result<OrderProps[], PersistenceError>> {
+            let orders = this.orders.filter(
+                (order) => order.platformUID === platformUID,
+            );
+    
+            if (filters?.description) {
+                const description = filters.description.toLowerCase();
+    
+                orders = orders.filter((order) =>
+                    order.description.toLowerCase().includes(description),
+                );
+            }
+    
+            if (filters?.description) {
+                const description = filters.description.toLowerCase();
+    
+                orders = orders.filter((order) =>
+                    order.description.toLowerCase().includes(description),
+                );
+            }
+    
+            if (filters?.orderBy) {
+                const orderBy = filters.orderBy;
+                const order = filters.order ?? "asc";
+    
+                orders.sort((a, b) => {
+                    const left = a[orderBy];
+                    const right = b[orderBy];
+    
+                    if (left < right) return order === "asc" ? -1 : 1;
+                    if (left > right) return order === "asc" ? 1 : -1;
+    
+                    return 0;
+                });
+            }
+    
+            if (filters?.page && filters?.limit) {
+                const start = (filters.page - 1) * filters.limit;
+                const end = start + filters.limit;
+    
+                orders = orders.slice(start, end);
+            }
+    
+            return ResultFactory.success(orders);
+        }
 
-        const orders = this.orders.filter(order => order.platformUID === platformUID);
-
-        return OrderMapper.toOrderUIDResponseList(orders);
-    }
-
-    async findByUID(uid: string): Promise<OrderResponseDTO | null> {
-        return this.orders.find((item) => item.uid === uid) || null;
-    }
+    async findByUID(
+            uid: string,
+            platformUID: string,
+        ): Promise<Result<OrderProps | null>> {
+            const orders = this.orders.filter(
+                (order) => order.platformUID === platformUID,
+            );
+            const order = orders.find((order) => order.uid === uid);
+    
+            return ResultFactory.success(order ?? null);
+        }
 
     async findByDescription(
         description: string,
-    ): Promise<OrderResponseDTO | null> {
+    ): Promise<OrderProps | null> {
         return (
             this.orders.find((order) => order.description === description) ||
             null
         );
     }
 
-    async register(order: OrderEntity): Promise<CreateOrderResponseDTO | null> {
+    async register(order: OrderEntity): Promise<Result<OrderProps>> {
         this.orders.push(order);
 
-        return order;
+        return ResultFactory.success(order);
     }
 
-    async update(order: OrderEntity): Promise<UpdateOrderResponseDTO | null> {
+    async update(order: OrderEntity): Promise<Result<OrderProps>> {
         const index = this.orders.findIndex(
             (oldOrder) => oldOrder.uid === order.uid,
         );
 
         const newOrder = (this.orders[index] = order);
 
-        return newOrder;
+        return ResultFactory.success(newOrder);
     }
 
-    async delete(uid: string): Promise<boolean> {
+    async delete(uid: string): Promise<Result<void>> {
         const index = this.orders.findIndex((oldOrder) => oldOrder.uid === uid);
 
-        const removedOrder = this.orders.splice(index, 1);
+        this.orders.splice(index, 1);
 
-        return !!removedOrder;
+        return ResultFactory.ok();
     }
 }

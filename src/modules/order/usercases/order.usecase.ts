@@ -2,101 +2,153 @@ import { randomUUID } from "crypto";
 import { IOrderRepository } from "../repositories/order-repository.interface";
 import { CreateOrderDTO } from "../dtos/create-order.dto";
 import { OrderEntity } from "../entities/order.entity";
-import { UpdateOrderDTO } from "../dtos/update-order.dto";
+import { UpdateOrderDTO, UpdateOrderResponseDTO } from "../dtos/update-order.dto";
+import { RequestContext } from "@/shared/context/request-context";
+import { Result } from "@/shared/result";
+import { ResultFactory } from "@/shared/result/result.factory";
+import { OrderProps } from "../entities/order.props";
+import { OrderNotFoundError } from "../errors/order-not-found.error";
+import { OrderAlreadyExistsError } from "../errors/order-already-exists.error";
+import { PersistenceError } from "@/shared/errors/persistence.error";
+import { OrderMapper } from "../mappers/order.mapper";
+import { isFailure } from "@/shared/result/result.guard";
+import { ResultMapper } from "@/shared/result/result.mapper";
+import { FindOrdersDTO } from "../dtos/find-order.dto";
 
 export class OrderUsecase {
-    constructor(private orderRepository: IOrderRepository) {}
+    constructor(
+        private readonly context: RequestContext,
+        private readonly orderRepository: IOrderRepository,
+    ) {}
 
-    async create(data: CreateOrderDTO) {
-        await this.validateOrderAlreadyExists(data.description);
+    async create(data: CreateOrderDTO): Promise<Result<OrderProps>> {
+        const validation = await this.validateOrderAlreadyExists(
+            data.description,
+        );
+
+        if (!validation.success) {
+            return validation;
+        }
 
         const order = new OrderEntity({
             uid: randomUUID(),
-            updatedBy: null,
             createdAt: new Date(),
             updatedAt: new Date(),
+            createdBy: this.context.user.uid,
+            updatedBy: null,
+            platformUID: this.context.user.platformUID,
             ...data,
         });
 
-        const resultOrder = await this.orderRepository.register(order);
+        const created = await this.orderRepository.register(order);
 
-        if (!resultOrder) {
-            throw new Error("Order not register!");
+        if (!created.success) {
+            return ResultFactory.failure(
+                new PersistenceError("Failed to create order."),
+            );
         }
 
-        return resultOrder;
+        return ResultFactory.success(created.data);
     }
 
-    async findByUID(uid: string) {
-        const order = await this.orderRepository.findByUID(uid);
+    async findByUID(uid: string): Promise<Result<OrderProps>> {
+        const result = await this.orderRepository.findByUID(
+            uid,
+            this.context.user.platformUID,
+        );
 
-        if (!order) {
-            throw new Error("Order not found!");
+        if (!result.success || !result.data) {
+            return ResultFactory.failure(new OrderNotFoundError({ uid }));
         }
 
-        return order;
+        return ResultFactory.success(result.data);
     }
 
-    async findByDescription(description: string) {
-        const order = await this.orderRepository.findByDescription(description);
+    async find(filters?: FindOrdersDTO): Promise<Result<OrderProps[]>> {
+        const result = await this.orderRepository.find(this.context.user.platformUID, filters);
 
-        if (!order) {
-            throw new Error("Order not found!");
+        if (!result.success) {
+            return ResultFactory.failure(
+                new PersistenceError("Failed to fetch orders."),
+            );
         }
 
-        return order;
+        return ResultFactory.success(result.data);
     }
 
-    async find(platformUID: string) {
-        const order = await this.orderRepository.find(platformUID);
+    async update(data: UpdateOrderDTO): Promise<Result<UpdateOrderResponseDTO>> {
+        const existing = await this.findByUID(data.uid);
 
-        if (!order) {
-            throw new Error("Orders not found!");
+        if (!existing.success) {
+            return existing;
         }
 
-        return order;
-    }
+        const validation = await this.validateOrderAlreadyExists(
+            data.description,
+            data.uid,
+        );
 
-    async update(data: UpdateOrderDTO) {
-        await this.validateOrderAlreadyExists(data.description, data.uid);
-
-        const oldOrder = await this.findByUID(data.uid);
+        if (!validation.success) {
+            return validation;
+        }
 
         const mergedOrder = new OrderEntity({
-            ...oldOrder,
+            ...existing.data,
             ...data,
+            updatedBy: this.context.user.uid,
             updatedAt: new Date(),
         });
 
-        const order = await this.orderRepository.update(mergedOrder);
+        const updated = await this.orderRepository.update(mergedOrder);
 
-        if (!order) {
-            throw new Error("Order not updated!");
+        if (!updated.success) {
+            return ResultFactory.failure(
+                new PersistenceError("Failed to update order."),
+            );
         }
 
-        return order;
+        return ResultMapper.map(updated, OrderMapper.toUpdatedResponseDTO);
     }
 
-    async delete(uid: string) {
-        await this.findByUID(uid);
+    async delete(uid: string): Promise<Result<boolean>> {
+        const existing = await this.findByUID(uid);
 
-        const isDeleted = await this.orderRepository.delete(uid);
-
-        if (!isDeleted) {
-            throw new Error("Order not deleted!");
+        if (!existing.success) {
+            return existing;
         }
 
-        return isDeleted;
+        const deleted = await this.orderRepository.delete(uid);
+
+        if (!deleted.success) {
+            return ResultFactory.failure(
+                new PersistenceError("Failed to delete order."),
+            );
+        }
+
+        return ResultFactory.success(true);
     }
 
     private async validateOrderAlreadyExists(
         description: string,
         uid?: string,
-    ) {
-        const order = await this.orderRepository.findByDescription(description);
+    ): Promise<Result<OrderProps | null>> {
+        const result = await this.orderRepository.find(
+            this.context.user.platformUID,
+            { description },
+        );
+
+        if (isFailure(result)) {
+            return result;
+        }
+
+        const [order] = result.data;
 
         if (order && order.uid !== uid) {
-            throw new Error("Order already exists!");
+            return ResultFactory.failure(
+                new OrderAlreadyExistsError(description),
+            );
         }
+
+        return ResultFactory.success(order);
     }
 }
